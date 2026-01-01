@@ -1,7 +1,5 @@
-
 import React, { useState } from 'react';
 import { 
-  Bot, 
   Sparkles, 
   Heart, 
   Mail, 
@@ -17,6 +15,9 @@ interface Props {
   onLogin: () => void;
 }
 
+// 吉祥物图片路径 - 使用 HTTPS 链接
+const MASCOT_IMG = "https://picgo-1302991947.cos.ap-guangzhou.myqcloud.com/images/logo_512_image.png";
+
 const LandingPage: React.FC<Props> = ({ onLogin }) => {
   const [copied, setCopied] = useState(false);
   const testEmail = "admin@xiaoyibao.com.cn";
@@ -31,16 +32,16 @@ const LandingPage: React.FC<Props> = ({ onLogin }) => {
 
   return (
     <div className="h-screen max-w-md mx-auto bg-brand-bg flex flex-col items-center justify-center p-8 overflow-hidden relative">
-      {/* Background Decor */}
+      {/* 背景装饰 */}
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-brand-light/30 rounded-full blur-[80px] pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-brand-core/10 rounded-full blur-[80px] pointer-events-none"></div>
 
       <div className="w-full flex-1 flex flex-col items-center justify-center space-y-12 animate-fade-in-up">
-        {/* Logo/Mascot Area */}
+        {/* Logo 区域 */}
         <div className="relative">
-          <div className="w-32 h-32 bg-white rounded-[2.5rem] shadow-2xl flex items-center justify-center mascot-float border-2 border-brand-light">
-            <div className="w-24 h-24 bg-gradient-to-br from-brand-core to-brand-dark rounded-[2rem] flex items-center justify-center">
-              <Bot className="w-12 h-12 text-white" />
+          <div className="w-32 h-32 bg-white rounded-[2.5rem] shadow-2xl flex items-center justify-center mascot-float border-2 border-brand-light overflow-hidden">
+            <div className="w-full h-full bg-brand-soft flex items-center justify-center relative">
+              <img src={MASCOT_IMG} alt="小胰宝" className="w-[85%] h-[85%] object-contain drop-shadow-md" />
             </div>
             <div className="absolute -top-3 -right-3">
               <Sparkles className="w-10 h-10 text-brand-orange fill-brand-orange" />
@@ -52,7 +53,7 @@ const LandingPage: React.FC<Props> = ({ onLogin }) => {
           </div>
         </div>
 
-        {/* Branding */}
+        {/* 品牌名称 */}
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-black text-slate-900 tracking-tighter">Pancrepal 小胰宝</h1>
           <p className="text-sm font-bold text-slate-500 leading-relaxed px-6">
@@ -60,7 +61,7 @@ const LandingPage: React.FC<Props> = ({ onLogin }) => {
           </p>
         </div>
 
-        {/* Test Login Box */}
+        {/* 测试登录框 */}
         <div className="w-full bg-white/60 backdrop-blur-xl rounded-[2.5rem] p-6 border border-white shadow-xl space-y-4">
           <div className="flex items-center justify-between px-2">
             <div className="flex items-center gap-2">
@@ -69,7 +70,7 @@ const LandingPage: React.FC<Props> = ({ onLogin }) => {
             </div>
             {copied ? (
               <span className="text-[9px] font-black text-brand-dark flex items-center gap-1">
-                <Check className="w-3 h-3" /> 已复制到剪贴板
+                <Check className="w-3 h-3" /> 已复制
               </span>
             ) : null}
           </div>
@@ -95,11 +96,11 @@ const LandingPage: React.FC<Props> = ({ onLogin }) => {
           </button>
         </div>
 
-        {/* Social Logins */}
+        {/* 社交登录 */}
         <div className="w-full space-y-3">
           <div className="flex items-center gap-3 px-4">
             <div className="h-[1px] flex-1 bg-slate-200"></div>
-            <span className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em]">或者使用其他方式</span>
+            <span className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em]">其他方式</span>
             <div className="h-[1px] flex-1 bg-slate-200"></div>
           </div>
 
@@ -116,7 +117,7 @@ const LandingPage: React.FC<Props> = ({ onLogin }) => {
         </div>
       </div>
 
-      {/* Footer Links */}
+      {/* 底部链接 */}
       <div className="mt-12 space-y-6 text-center">
         <div className="flex items-center justify-center gap-2 text-slate-400">
           <span className="text-[11px] font-bold">还没有账号？</span>

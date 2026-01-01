@@ -2,7 +2,6 @@
   "name": "病情主动管理科普助手 (Cancer Care Assistant)",
   "description": "A non-profit oncology science platform for patients and families, featuring an interactive roadmap, gamified learning, and AI copilot.",
   "requestFramePermissions": [
-    "camera",
     "microphone"
   ]
 }

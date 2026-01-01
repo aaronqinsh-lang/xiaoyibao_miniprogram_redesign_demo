@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GoogleGenAI, LiveServerMessage, Modality, Blob } from '@google/genai';
-import { Mic, Loader2, Volume2, Info, ChevronLeft, Heart, MicOff } from 'lucide-react';
+import { Mic, Loader2, X, Volume2, Info, ChevronLeft, UserCheck, Heart, MicOff, Bot } from 'lucide-react';
 
 // 吉祥物图片路径 - 使用 HTTPS 链接以确保跨域和安全加载
 const MASCOT_IMG = "https://picgo-1302991947.cos.ap-guangzhou.myqcloud.com/images/logo_512_image.png";
@@ -105,10 +105,7 @@ const VoiceAssistantPage: React.FC<Props> = ({ isCareMode, onBack }) => {
   const stopSession = () => {
     setIsActive(false);
     setStatus('idle');
-    if (sessionRef.current) {
-        try { sessionRef.current.close(); } catch(e) {}
-        sessionRef.current = null;
-    }
+    if (sessionRef.current) sessionRef.current = null;
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
@@ -126,13 +123,12 @@ const VoiceAssistantPage: React.FC<Props> = ({ isCareMode, onBack }) => {
 
   const startSession = async () => {
     try {
-      // API Key Selection Step
+      // 检查 API Key 选择状态
       const aistudio = (window as any).aistudio;
       if (aistudio && typeof aistudio.hasSelectedApiKey === 'function') {
         const hasKey = await aistudio.hasSelectedApiKey();
         if (!hasKey) {
           await aistudio.openSelectKey();
-          // Proceed after key selection dialog is triggered
         }
       }
 
@@ -140,7 +136,6 @@ const VoiceAssistantPage: React.FC<Props> = ({ isCareMode, onBack }) => {
       setIsActive(true);
       setErrorMessage(null);
 
-      // Initialize AI client just before use
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const inputCtx = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
       const outputCtx = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
@@ -156,13 +151,11 @@ const VoiceAssistantPage: React.FC<Props> = ({ isCareMode, onBack }) => {
           onopen: () => {
             setStatus('listening');
             const source = inputCtx.createMediaStreamSource(stream);
-            const scriptProcessor = inputCtx.createScriptProcessor(4096, 1, 1);
+            const scriptProcessor = inputCtx.createScriptProcessor(2048, 1, 1);
             scriptProcessor.onaudioprocess = (e) => {
               const inputData = e.inputBuffer.getChannelData(0);
               const pcmBlob = createBlob(inputData);
-              sessionPromise.then(s => {
-                if (s) s.sendRealtimeInput({ media: pcmBlob });
-              });
+              sessionPromise.then(s => s.sendRealtimeInput({ media: pcmBlob }));
             };
             source.connect(scriptProcessor);
             scriptProcessor.connect(inputCtx.destination);
@@ -178,18 +171,15 @@ const VoiceAssistantPage: React.FC<Props> = ({ isCareMode, onBack }) => {
               setStatus('speaking');
               const ctx = outputAudioContextRef.current;
               if (!ctx) return;
-              
               nextStartTimeRef.current = Math.max(nextStartTimeRef.current, ctx.currentTime);
               const audioBuffer = await decodeAudioData(decode(base64Audio), ctx, 24000, 1);
               const source = ctx.createBufferSource();
               source.buffer = audioBuffer;
               source.connect(ctx.destination);
-              
               source.addEventListener('ended', () => {
                 sourcesRef.current.delete(source);
                 if (sourcesRef.current.size === 0) setStatus('listening');
               });
-              
               source.start(nextStartTimeRef.current);
               nextStartTimeRef.current += audioBuffer.duration;
               sourcesRef.current.add(source);
@@ -198,7 +188,7 @@ const VoiceAssistantPage: React.FC<Props> = ({ isCareMode, onBack }) => {
           onerror: (e: any) => {
             console.error(e);
             if (e.message?.includes("Requested entity was not found")) {
-                if (aistudio) aistudio.openSelectKey();
+              if (aistudio) aistudio.openSelectKey();
             }
             setStatus('error');
             setErrorMessage('连接异常，请重试');
@@ -219,7 +209,7 @@ const VoiceAssistantPage: React.FC<Props> = ({ isCareMode, onBack }) => {
     } catch (err: any) {
       console.error(err);
       setStatus('error');
-      setErrorMessage(err.message || '无法访问麦克风');
+      setErrorMessage(err.message || '无法建立通话连接');
       stopSession();
     }
   };
@@ -233,7 +223,7 @@ const VoiceAssistantPage: React.FC<Props> = ({ isCareMode, onBack }) => {
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-brand-light/30 rounded-full blur-[80px] pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-brand-core/10 rounded-full blur-[80px] pointer-events-none"></div>
 
-      {/* 顶部导航 */}
+      {/* 顶部返回 */}
       <div className="w-full flex justify-start z-20">
         <button 
           onClick={() => { stopSession(); if (onBack) onBack(); }}
@@ -243,7 +233,7 @@ const VoiceAssistantPage: React.FC<Props> = ({ isCareMode, onBack }) => {
         </button>
       </div>
 
-      {/* 核心交互区域 */}
+      {/* 中心视觉区域 */}
       <div className="relative py-8 flex flex-col items-center justify-center flex-1 w-full">
         {/* 呼吸灯光环 */}
         {(status === 'listening' || status === 'speaking' || status === 'connecting') && (
@@ -253,16 +243,17 @@ const VoiceAssistantPage: React.FC<Props> = ({ isCareMode, onBack }) => {
           </div>
         )}
 
-        {/* 中央 Logo 按钮 */}
+        {/* 核心圆形头像/开关 */}
         <div 
           onClick={handleToggle}
+          role="button"
+          tabIndex={0}
           className={`
-            relative z-20 bg-white rounded-full flex items-center justify-center shadow-2xl p-5 mascot-float transition-all duration-500 cursor-pointer
+            relative z-20 bg-white rounded-full flex items-center justify-center shadow-2xl p-5 mascot-float transition-all duration-500 cursor-pointer outline-none focus:ring-4 focus:ring-brand-core/20
             ${isCareMode ? 'w-64 h-64' : 'w-56 h-56'}
             ${status === 'speaking' ? 'scale-110 shadow-brand-core/20' : ''}
           `}
         >
-          {/* 绿色圆内饰 */}
           <div className={`w-full h-full bg-brand-core rounded-full flex items-center justify-center relative overflow-hidden transition-all duration-500 shadow-inner`}>
              <img 
                src={MASCOT_IMG} 
@@ -270,102 +261,10 @@ const VoiceAssistantPage: React.FC<Props> = ({ isCareMode, onBack }) => {
                className={`object-contain brightness-110 drop-shadow-md ${isCareMode ? 'w-44 h-44' : 'w-36 h-36'}`} 
              />
              
-             {/* 音频跳动特效 */}
+             {/* 说话时的音频能量条 */}
              {status === 'speaking' && (
-              <div className="absolute bottom-10 left-0 right-0 flex justify-center gap-1.5 px-2">
+              <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-1.5 px-2">
                 <div className="w-1.5 h-6 bg-white/60 rounded-full animate-[bounce_0.6s_ease-in-out_infinite] delay-75"></div>
                 <div className="w-1.5 h-10 bg-white rounded-full animate-[bounce_0.8s_ease-in-out_infinite]"></div>
                 <div className="w-1.5 h-8 bg-white/80 rounded-full animate-[bounce_0.5s_ease-in-out_infinite] delay-150"></div>
-                <div className="w-1.5 h-10 bg-white rounded-full animate-[bounce_0.7s_ease-in-out_infinite] delay-300"></div>
-              </div>
-            )}
-          </div>
-          
-          {/* 麦克风标签 */}
-          <div className={`absolute bottom-2 right-4 bg-brand-orange text-white rounded-2xl shadow-xl border-4 border-white transition-all ${isCareMode ? 'p-4' : 'p-3'}`}>
-             <Mic className={isCareMode ? "w-7 h-7" : "w-6 h-6"} />
-          </div>
-
-          {/* 心形装饰 */}
-          <div className="absolute top-4 right-8 bg-white p-1 rounded-full shadow-sm border border-brand-light">
-             <Heart className="w-4 h-4 text-brand-orange fill-brand-orange" />
-          </div>
-        </div>
-      </div>
-
-      {/* 状态文字 */}
-      <div className="text-center space-y-3 relative z-10 max-w-xs">
-        <h2 className={`${isCareMode ? 'text-3xl' : 'text-2xl'} font-black text-slate-800 tracking-tight leading-none`}>
-          {status === 'idle' ? '语音实时科普' : 
-           status === 'connecting' ? '正在开启...' :
-           status === 'listening' ? '我在听，请说话' :
-           status === 'speaking' ? '正在为您讲解' : 
-           '连接异常'}
-        </h2>
-        <p className={`${isCareMode ? 'text-lg' : 'text-sm'} text-slate-400 font-bold leading-relaxed px-4`}>
-          {status === 'idle' ? '点击中间按钮开启实时对话' : 
-           status === 'listening' ? '您可以问我任何科普问题' : 
-           status === 'speaking' ? '您可以随时说话来打断我' :
-           errorMessage || '请检查权限并重试'}
-        </p>
-      </div>
-
-      {/* 音色切换 */}
-      {status === 'idle' && (
-        <div className="w-full px-2 animate-in slide-in-from-bottom-4 duration-500">
-           <div className="grid grid-cols-3 gap-2">
-             {VOICE_OPTIONS.map((opt) => (
-               <button
-                 key={opt.id}
-                 onClick={() => setSelectedVoice(opt)}
-                 className={`flex flex-col items-center justify-center py-4 rounded-2xl transition-all border-2 ${
-                   selectedVoice.id === opt.id 
-                    ? 'bg-white border-brand-core text-brand-dark shadow-md' 
-                    : 'bg-white/50 border-transparent text-slate-400 hover:bg-white'
-                 }`}
-               >
-                 <div className={`p-2 rounded-xl mb-2 ${selectedVoice.id === opt.id ? 'bg-brand-light text-brand-core' : 'bg-slate-100 text-slate-300'}`}>
-                    <Volume2 className="w-4 h-4" />
-                 </div>
-                 <p className={`${isCareMode ? 'text-sm' : 'text-[11px]'} font-black`}>{opt.label}</p>
-                 {selectedVoice.id === opt.id && <div className="mt-1 w-1 h-1 bg-brand-core rounded-full"></div>}
-               </button>
-             ))}
-           </div>
-        </div>
-      )}
-
-      {/* 底部按钮 */}
-      <div className="flex-1 flex flex-col justify-end pb-8">
-        <button
-          onClick={handleToggle}
-          className={`group relative flex items-center justify-center rounded-full transition-all duration-500 shadow-2xl ${
-            isCareMode ? 'w-24 h-24' : 'w-20 h-20'
-          } ${
-            isActive 
-              ? 'bg-white text-red-500 border-2 border-red-100' 
-              : 'bg-brand-dark text-white'
-          }`}
-        >
-          {status === 'connecting' ? (
-            <Loader2 className="w-10 h-10 animate-spin" />
-          ) : isActive ? (
-            <MicOff className="w-8 h-8" />
-          ) : (
-            <Mic className="w-8 h-8" />
-          )}
-        </button>
-      </div>
-
-      {/* 风险提示卡片 */}
-      <div className="bg-white/40 backdrop-blur-xl border border-white p-3 rounded-2xl flex items-start gap-2 max-w-sm shadow-sm relative z-10">
-        <Info className="w-4 h-4 text-brand-core shrink-0 mt-0.5" />
-        <p className="text-[10px] font-bold text-slate-400 leading-normal">
-          AI科普仅供参考，不作医疗建议。就医请遵医嘱。
-        </p>
-      </div>
-    </div>
-  );
-};
-
-export default VoiceAssistantPage;
+                <div className="w-1.5 h-
